@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hopscraper Dashboard</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--line:#e4e7ec;--text:#101828;--muted:#667085;--accent:#2563eb;--pos:#047857;--warn:#b54708;--neg:#b42318}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:1040px;margin:0 auto;padding:28px 20px 48px}
+header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+h1 span{color:var(--muted);font-weight:400}
+.upd{color:var(--muted);font-size:13px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.k{color:var(--muted);font-size:13px;font-weight:500}
+.v{font-size:28px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.s{color:var(--muted);font-size:13px}
+.gold,.green,.pink,.cyan{color:inherit}
+.pos{color:var(--pos)}.warn{color:var(--warn)}.neg{color:var(--neg)}
+h2{font-size:15px;font-weight:600;margin:0 0 12px}
+.chart{width:100%;height:240px;display:block}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tabs button{background:#fff;color:var(--muted);border:0;border-left:1px solid var(--line);padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.tabs button:first-child{border-left:0}
+.tabs button.on{background:#f2f4f7;color:var(--text);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+td{padding:8px 4px;border-top:1px solid var(--line);vertical-align:top}tr:first-child td{border-top:0}td.r{text-align:right;white-space:nowrap}
+.rev{border-top:1px solid var(--line);padding:12px 0}.rev:first-child{border-top:0;padding-top:0}
+.stars{color:#f59e0b;letter-spacing:1px}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:500;border:1px solid var(--line);background:#f9fafb}
+.two{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:760px){.two{grid-template-columns:1fr 1fr}}
+.bar{height:4px;background:#f2f4f7;border-radius:2px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--accent)}
+.empty{color:var(--muted);font-size:14px}
+[hidden]{display:none!important}
+.tip{color:var(--muted);font-size:13px;margin-top:16px}
+a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div id="lock" hidden style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9">
+<form id="lockForm" class="card" style="width:100%;max-width:340px">
+<h2 style="margin-bottom:4px">Hopscraper Dashboard</h2><p class="s" style="margin:0 0 14px">Enter the password to view.</p>
+<input id="lockPw" type="password" autocomplete="current-password" required style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:inherit">
+<label class="s" style="display:flex;gap:6px;align-items:center;margin:10px 0 14px"><input id="lockKeep" type="checkbox" checked> Remember on this device</label>
+<button style="width:100%;padding:9px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer">Unlock</button>
+<p id="lockErr" class="neg s" style="margin:10px 0 0"></p></form></div>
+<main>
+<header><h1>Hopscraper <span>Dashboard</span></h1><div class="upd" id="upd">loading…</div></header>
+
+<div class="grid">
+  <div class="card"><div class="k">Earnings (net)</div><div class="v" id="kept">$0</div><div class="s" id="keptSub">after Apple's cut</div></div>
+  <div class="card"><div class="k">This month</div><div class="v" id="month">$0</div><div class="s" id="monthSub"></div></div>
+  <div class="card"><div class="k">Downloads</div><div class="v" id="dl">0</div><div class="s" id="dlSub"></div></div>
+  <div class="card"><div class="k">Rating</div><div class="v" id="rating">–</div><div class="s" id="ratingSub">no reviews yet</div></div>
+</div>
+
+<div class="card" style="margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0">Performance</h2>
+    <div class="tabs"><button data-m="total" class="on">Cumulative</button><button data-m="daily">Daily</button><button data-m="downloads">Downloads</button></div>
+  </div>
+  <svg class="chart" id="chart" viewBox="0 0 900 220" preserveAspectRatio="none"></svg>
+</div>
+
+<div class="two">
+  <div class="card"><h2>Top products</h2><table id="prods"></table></div>
+  <div class="card"><h2>App Store status</h2><div id="status"></div></div>
+</div>
+
+<div class="card" style="margin-top:12px"><h2>Reviews</h2><div id="reviews"></div></div>
+
+<p class="tip">Numbers come from Apple's daily sales report, which shows up the morning after. "Earned" is what you keep after Apple's cut (in US dollars, other currencies converted roughly). Apple pays it out to your dad's bank about a month after each month ends.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const money=n=>'$'+(n>=100?Math.round(n).toLocaleString():n.toFixed(2));
+const STATE={READY_FOR_SALE:['Live on the App Store','pos'],READY_FOR_DISTRIBUTION:['Live on the App Store','pos'],WAITING_FOR_REVIEW:['Waiting for Apple review','warn'],IN_REVIEW:['Apple is reviewing it','warn'],PENDING_DEVELOPER_RELEASE:['Approved - press Release','warn'],REJECTED:['Rejected - check App Store Connect','neg'],DEVELOPER_REJECTED:['Pulled from review','neg'],PREPARE_FOR_SUBMISSION:['Being prepared',''],PROCESSING_FOR_DISTRIBUTION:['Going live…','warn'],UNRESOLVED_ISSUES:['Rejected - check App Store Connect','neg'],COMPLETE:['Finished','pos'],READY_FOR_REVIEW:['Ready to submit',''],CANCELING:['Cancelling','neg']};
+const nice=s=>STATE[s]?STATE[s][0]:String(s||'').toLowerCase().replace(/_/g,' ');
+const tone=s=>STATE[s]?STATE[s][1]:'';
+const ago=d=>{const m=(Date.now()-new Date(d))/6e4;return m<60?Math.round(m)+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
+let D=null,mode='total';
+
+function chart(){
+  const svg=$('chart'),days=D.days;svg.innerHTML='';
+  if(!days.length){svg.innerHTML='<text x="450" y="115" fill="#98a2b3" font-size="18" text-anchor="middle">No sales data yet</text>';return}
+  let run=0;const pts=days.map(d=>{run+=d.keptUSD;return {d:d.date,v:mode==='total'?run:mode==='daily'?d.keptUSD:d.downloads}});
+  const max=Math.max(1,...pts.map(p=>p.v)),W=900,H=220,pad=28,n=pts.length;
+  const x=i=>n===1?W/2:pad+(W-2*pad)*i/(n-1),y=v=>H-pad-(H-2*pad)*v/max;
+  const col='#2563eb';
+  let g='';
+  for(let k=0;k<=3;k++){const yy=pad+(H-2*pad)*k/3,val=max*(1-k/3);g+=`<line x1="${pad}" x2="${W-pad}" y1="${yy}" y2="${yy}" stroke="#eef0f3"/><text x="${pad+2}" y="${yy-4}" fill="#98a2b3" font-size="12">${mode==='downloads'?Math.round(val):money(val)}</text>`}
+  if(mode==='daily'){const bw=Math.max(4,(W-2*pad)/n*0.6);pts.forEach((p,i)=>{g+=`<rect x="${x(i)-bw/2}" y="${y(p.v)}" width="${bw}" height="${H-pad-y(p.v)}" rx="3" fill="${col}"><title>${p.d}: ${money(p.v)}</title></rect>`})}
+  else{const line=pts.map((p,i)=>(i?'L':'M')+x(i)+','+y(p.v)).join(' ');
+    g+=`<path d="${line} L${x(n-1)},${H-pad} L${x(0)},${H-pad} Z" fill="${col}" opacity=".08"/><path d="${line}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach((p,i)=>g+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="3" fill="${col}"><title>${p.d}: ${mode==='downloads'?p.v:money(p.v)}</title></circle>`)}
+  const lab=[0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i);
+  lab.forEach(i=>g+=`<text x="${x(i)}" y="${H-8}" fill="#98a2b3" font-size="12" text-anchor="middle">${pts[i].d.slice(5)}</text>`);
+  svg.innerHTML=g;
+}
+
+function render(){
+  const days=D.days,kept=days.reduce((a,d)=>a+d.keptUSD,0),paid=days.reduce((a,d)=>a+d.paidUSD,0),dl=days.reduce((a,d)=>a+d.downloads,0),buys=days.reduce((a,d)=>a+d.purchases,0);
+  const ym=new Date().toISOString().slice(0,7),mdays=days.filter(d=>d.date.startsWith(ym)),mk=mdays.reduce((a,d)=>a+d.keptUSD,0);
+  const last=days[days.length-1];
+  $('upd').textContent='Updated '+ago(D.updated);
+  $('kept').textContent=money(kept);$('keptSub').textContent=paid?`players paid ${money(paid)} · ${buys} purchase${buys==1?'':'s'}`:'after Apple\'s cut';
+  $('month').textContent=money(mk);$('monthSub').textContent=last?`latest day (${last.date.slice(5)}): ${money(last.keptUSD)}`:'';
+  $('dl').textContent=dl.toLocaleString();$('dlSub').textContent=last?`${last.downloads} on ${last.date.slice(5)}`:'';
+  const rv=D.reviews||[];
+  if(rv.length){const avg=rv.reduce((a,r)=>a+r.rating,0)/rv.length;$('rating').innerHTML=avg.toFixed(1)+' <span class="stars" style="font-size:18px">★</span>';$('ratingSub').textContent=rv.length+' written review'+(rv.length==1?'':'s')}
+  // products
+  const P={};days.forEach(d=>Object.entries(d.products).forEach(([n,p])=>{P[n]=P[n]||{units:0,keptUSD:0};P[n].units+=p.units;P[n].keptUSD+=p.keptUSD}));
+  const pl=Object.entries(P).sort((a,b)=>b[1].keptUSD-a[1].keptUSD),pm=Math.max(1,...pl.map(p=>p[1].keptUSD));
+  $('prods').innerHTML=pl.length?pl.map(([n,p])=>`<tr><td>${esc(n)}<div class="bar"><i style="width:${100*p.keptUSD/pm}%"></i></div></td><td class="r">${p.units}×</td><td class="r">${money(p.keptUSD)}</td></tr>`).join(''):'<tr><td class="empty">No purchases yet.</td></tr>';
+  // status
+  const st=D.status,rs=D.review,b=D.builds||[];
+  let h='';
+  if(st)h+=`<p style="margin:0 0 8px">Version ${esc(st.version)}: <span class="pill"><span class="${tone(st.state)}">${nice(st.state)}</span></span></p>`;
+  if(rs&&rs.state!=='COMPLETE')h+=`<p style="margin:0 0 8px">Latest review: <b class="${tone(rs.state)}">${nice(rs.state)}</b>${rs.submitted?' · sent '+ago(rs.submitted):''}</p>`;
+  if(b.length)h+=`<p class="s" style="margin:0 0 4px">Latest builds</p>`+b.map(x=>`<div class="s">Build ${esc(x.build)} · ${x.state==='VALID'?'ready':esc(String(x.state).toLowerCase())} · ${ago(x.uploaded)}</div>`).join('');
+  h+=`<p class="s" style="margin:10px 0 0">Store page: <a style="color:#8dd3ff" href="https://apps.apple.com/app/id6815023745">apps.apple.com/app/id6815023745</a></p>`;
+  if(D.errors&&D.errors.length)h+=`<p class="neg s" style="margin-top:8px">Some data couldn't load: ${esc(D.errors.join('; ')).slice(0,200)}</p>`;
+  $('status').innerHTML=h;
+  // reviews
+  $('reviews').innerHTML=rv.length?rv.slice(0,20).map(r=>`<div class="rev"><span class="stars">${'★'.repeat(r.rating)}<span style="color:#e4e7ec">${'★'.repeat(5-r.rating)}</span></span> <b>${esc(r.title||'')}</b><div>${esc(r.body||'')}</div><div class="s">${esc(r.who||'')} · ${esc(r.country||'')} · ${ago(r.date)}</div></div>`).join(''):'<div class="empty">No reviews yet.</div>';
+  chart();
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');mode=b.dataset.m;if(D)chart()});
+// Data source: on the Mac's home server it's plain data.json. On the public site it's data.enc.json,
+// AES-GCM encrypted on the Mac; the password never leaves this browser.
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decrypt(E,pw){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(E.salt),iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(E.iv)},key,b64(E.ct))));
+}
+function getPw(){try{return localStorage.getItem('hq_pw')||sessionStorage.getItem('hq_pw')}catch(e){return null}}
+async function load(){
+  try{const r=await fetch('data.json',{cache:'no-store'});if(r.ok){D=await r.json();$('lock').hidden=true;return render()}}catch(e){}
+  try{
+    const E=await (await fetch('data.enc.json',{cache:'no-store'})).json(),pw=getPw();
+    if(!pw){$('lock').hidden=false;return}
+    D=await decrypt(E,pw);$('lock').hidden=true;render();
+  }catch(e){if(getPw()){try{localStorage.removeItem('hq_pw');sessionStorage.removeItem('hq_pw')}catch(_){}$('lockErr').textContent='Wrong password.'}$('lock').hidden=false}
+}
+$('lockForm').onsubmit=async ev=>{ev.preventDefault();const pw=$('lockPw').value;
+  try{($('lockKeep').checked?localStorage:sessionStorage).setItem('hq_pw',pw)}catch(e){}
+  $('lockErr').textContent='';await load()};
+load();setInterval(load,10*60*1000);
+</script>
+</body>
+</html>
