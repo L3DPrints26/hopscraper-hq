@@ -85,7 +85,7 @@ a{color:var(--accent);text-decoration:none}
       <div class="seg" id="metric"><button data-m="cum" class="on">Earnings</button><button data-m="daily">Daily</button><button data-m="dl">Downloads</button><button data-m="traffic">Store traffic</button><button data-m="use">Sessions</button></div>
       <div class="seg" id="range"><button data-r="7">7D</button><button data-r="30" class="on">30D</button><button data-r="0">All</button></div>
     </div></div>
-  <svg class="chart" id="chart" viewBox="0 0 1000 250" preserveAspectRatio="none"></svg>
+  <svg class="chart" id="chart" viewBox="0 0 1000 250"></svg>
   <div class="s" id="chNote" style="margin-top:6px"></div>
 </div>
 
@@ -145,17 +145,18 @@ function chart(){
   const all=src;if(range)src=src.slice(-range);
   $('chTitle').textContent={cum:'Net earnings (cumulative)',daily:'Net earnings per day',dl:'Downloads per day',traffic:'Store impressions & page views',use:'Sessions per day'}[metric];
   $('chNote').innerHTML='';
-  if(!src.length){svg.innerHTML=`<text x="500" y="125" fill="#98a2b3" font-size="15" text-anchor="middle">${ana?'App Analytics arrives a day or two after it was switched on':'No sales data yet'}</text>`;return}
+  if(!src.length){svg.setAttribute('viewBox','0 0 1000 250');svg.innerHTML=`<text x="500" y="125" fill="#98a2b3" font-size="15" text-anchor="middle">${ana?'App Analytics arrives a day or two after it was switched on':'No sales data yet'}</text>`;return}
   let val,s2=null,isMoney=false;
   if(metric==='cum'){let run=sum(all.slice(0,all.length-src.length),d=>d.keptUSD);val=src.map(d=>run+=d.keptUSD);isMoney=true}
   else if(metric==='daily'){val=src.map(d=>d.keptUSD);isMoney=true}
   else if(metric==='dl')val=src.map(d=>d.downloads);
   else if(metric==='traffic'){val=src.map(d=>d.impressions||0);s2=src.map(d=>d.pageViews||0);$('chNote').innerHTML='<span style="color:#2563eb">━</span> impressions &nbsp; <span style="color:#93c5fd">╍</span> product page views'}
   else val=src.map(d=>d.sessions||0);
-  const W=1000,H=250,pl=56,pr=12,pt=12,pb=26,n=src.length,max=Math.max(isMoney?1:4,...val,...(s2||[]));
+  const W=Math.max(300,Math.round(svg.getBoundingClientRect().width)||1000),H=250,pl=56,pr=12,pt=12,pb=26,n=src.length,max=Math.max(isMoney?1:4,...val,...(s2||[]));
   const mag=Math.pow(10,Math.floor(Math.log10(max))),top=Math.ceil(max/mag)*mag;
   const x=i=>n===1?(pl+W-pr)/2:pl+(W-pl-pr)*i/(n-1),y=v=>H-pb-(H-pt-pb)*v/top;
-  const lbl=v=>isMoney?money(v):fmt(v);
+  const lbl=v=>isMoney?(top>=10?'$'+Math.round(v).toLocaleString():money(v)):fmt(v);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   let g='';
   for(let k=0;k<=4;k++){const vv=top*k/4,yy=y(vv);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#eef0f3"/><text x="${pl-8}" y="${yy+4}" fill="#98a2b3" font-size="11" text-anchor="end">${lbl(vv)}</text>`}
   if(metric==='daily'||metric==='dl'){const bw=Math.max(3,(W-pl-pr)/n*0.62);val.forEach((v,i)=>g+=`<rect x="${x(i)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(0,H-pb-y(v))}" rx="2" fill="#2563eb"><title>${src[i].date}: ${lbl(v)}</title></rect>`)}
@@ -244,6 +245,7 @@ async function load(){
 }
 $('lockForm').onsubmit=async ev=>{ev.preventDefault();store.set($('lockPw').value,$('lockKeep').checked);$('lockErr').textContent='';await load()};
 $('out').onclick=ev=>{ev.preventDefault();store.clear();location.reload()};
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>D&&chart(),150)});
 load();setInterval(load,10*60*1000);
 </script>
 </body>
