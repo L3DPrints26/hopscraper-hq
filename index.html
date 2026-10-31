@@ -218,8 +218,12 @@ function render(){
   h+=`<div class="row"><a href="https://apps.apple.com/app/id6815023745" target="_blank" rel="noopener">App Store page ↗</a><a href="https://appstoreconnect.apple.com/apps/6815023745" target="_blank" rel="noopener">App Store Connect ↗</a></div>`;
   $('status').innerHTML=h;
   // ratings
-  const cnt=[0,0,0,0,0];rv.forEach(r=>cnt[r.rating-1]++);const cm=Math.max(1,...cnt),avg=rv.length?sum(rv,r=>r.rating)/rv.length:0;
-  $('dist').innerHTML=rv.length?`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span class="v">${avg.toFixed(1)}</span><span class="stars">${stars(Math.round(avg))}</span><span class="s">${rv.length} reviews</span></div><div class="dist">`+[5,4,3,2,1].map(s=>`<span>${s}★</span><div class="bar" style="margin:0"><i style="width:${100*cnt[s-1]/cm}%;background:#f59e0b"></i></div><span style="text-align:right">${cnt[s-1]}</span>`).join('')+'</div>':'<div class="empty">No ratings with reviews yet.</div>';
+  // the headline is the App Store's own star rating (every rating, written or not); the bars below can only count
+  // the WRITTEN reviews, because Apple doesn't hand out the breakdown of star-only ratings
+  const cnt=[0,0,0,0,0];rv.forEach(r=>cnt[r.rating-1]++);const cm=Math.max(1,...cnt);
+  const RA=D.ratings||{},rn=RA.count||0,ravg=rn?+RA.avg:(rv.length?sum(rv,r=>r.rating)/rv.length:0);
+  $('dist').innerHTML=`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span class="v">${rn||rv.length?ravg.toFixed(1):'–'}</span><span class="stars">${stars(Math.round(ravg))}</span><span class="s">${rn?`${rn} rating${rn==1?'':'s'} on the App Store`:'no star ratings yet'}</span></div>`+
+   (rv.length?'<div class="dist">'+[5,4,3,2,1].map(s=>`<span>${s}★</span><div class="bar" style="margin:0"><i style="width:${100*cnt[s-1]/cm}%;background:#f59e0b"></i></div><span style="text-align:right">${cnt[s-1]}</span>`).join('')+'</div><div class="s" style="margin-top:6px">bars = written reviews only</div>':'');
   renderReviews();chart();
 }
 const stars=n=>'★'.repeat(n)+'<i>'+'★'.repeat(5-n)+'</i>';
