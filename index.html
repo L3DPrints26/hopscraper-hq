@@ -187,7 +187,11 @@ function render(){
   $('kBuy').textContent=fmt(buys);$('kBuyS').textContent=`${pct(buys,dl)} of downloads${refunds?` · ${refunds} refunded`:''}`;
   if(D.subs){$('kClub').textContent=fmt(D.subs.active);$('kClubS').textContent=`as of ${md(D.subs.date)}${D.subs.trials?` · ${D.subs.trials} on trial`:''}${D.subs.billingRetry?` · ${D.subs.billingRetry} payment issue`:''}`}
   const rv=D.reviews||[];
-  if(rv.length){const avg=sum(rv,r=>r.rating)/rv.length;$('kRate').innerHTML=`${avg.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${rv.length} written review${rv.length==1?'':'s'}`}
+  // the App Store's own star average (counts star-only ratings too) wins over an average of the written reviews alone
+  const RT=D.ratings||{};
+  if(RT.count){$('kRate').innerHTML=`${(+RT.avg).toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${RT.count} rating${RT.count==1?'':'s'} · ${rv.length} written`}
+  else if(rv.length){const avg=sum(rv,r=>r.rating)/rv.length;$('kRate').innerHTML=`${avg.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${rv.length} written review${rv.length==1?'':'s'}`}
+  else $('kRateS').textContent='none on the App Store yet';
   // funnel
   const a7=an.slice(-7);
   if(an.length){const imp=sum(a7,d=>d.impressions),pv=sum(a7,d=>d.pageViews),fd=sum(a7,d=>d.firstDownloads),ses=sum(a7,d=>d.sessions),dev=sum(a7,d=>d.activeDevices),cr=sum(a7,d=>d.crashes),del=sum(a7,d=>d.deletions);
