@@ -209,7 +209,7 @@ function render(){
   $('kBuy').textContent=fmt(buys);$('kBuyS').textContent=`${pct(buys,dl)} of downloads${refunds?` · ${refunds} refunded`:''}`;
   if(D.subs){$('kClub').textContent=fmt(D.subs.active);$('kClubS').textContent=`as of ${md(D.subs.date)}${D.subs.trials?` · ${D.subs.trials} on trial`:''}${D.subs.billingRetry?` · ${D.subs.billingRetry} payment issue`:''}`}
   const rv=D.reviews||[];
-  {const sr=D.storeRating;if(sr||rv.length){const av=sr?sr.avg:sum(rv,r=>r.rating)/rv.length,tot=sr?sr.count:rv.length;$('kRate').innerHTML=`${av.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${tot} rating${tot==1?'':'s'}`}}
+  {const sr=(D.storeRating||D.ratings);if(sr||rv.length){const av=sr?sr.avg:sum(rv,r=>r.rating)/rv.length,tot=sr?sr.count:rv.length;$('kRate').innerHTML=`${av.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${tot} rating${tot==1?'':'s'}`}}
   // funnel
   const a7=an.slice(-7);
   if(an.length){const imp=sum(a7,d=>d.impressions),pv=sum(a7,d=>d.pageViews),fd=sum(a7,d=>d.firstDownloads),ses=sum(a7,d=>d.sessions),dev=sum(a7,d=>d.activeDevices),cr=sum(a7,d=>d.crashes),del=sum(a7,d=>d.deletions);
@@ -236,7 +236,7 @@ function render(){
   h+=`<div class="row"><a href="https://apps.apple.com/app/id6815023745" target="_blank" rel="noopener">App Store page ↗</a><a href="https://appstoreconnect.apple.com/apps/6815023745" target="_blank" rel="noopener">App Store Connect ↗</a></div>`;
   $('status').innerHTML=h;
   // ratings
-  const sr=D.storeRating,avg=rv.length?sum(rv,r=>r.rating)/rv.length:0,tot=sr?sr.count:rv.length,av=sr?sr.avg:avg;
+  const sr=(D.storeRating||D.ratings),avg=rv.length?sum(rv,r=>r.rating)/rv.length:0,tot=sr?sr.count:rv.length,av=sr?sr.avg:avg;
   $('dist').innerHTML=tot?`<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px"><span class="v" style="margin:0">${av.toFixed(1)}</span><span class="stars">${stars(Math.round(av))}</span><span class="s">${tot} rating${tot==1?'':'s'}</span></div><div class="s" style="margin-bottom:8px">${rv.length} with a written review · ${Math.max(0,tot-rv.length)} stars only</div>`:'<div class="empty">No ratings yet.</div>';
   renderReviews();chart();
 }
