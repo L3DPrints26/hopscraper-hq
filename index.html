@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Hopscraper Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--line:#e4e7ec;--soft:#f2f4f7;--text:#101828;--muted:#667085;--faint:#98a2b3;--accent:#2563eb;--accent2:#93c5fd;--pos:#047857;--warn:#b54708;--neg:#b42318}
+:root{--bg:#eef0fb;--card:#fff;--line:#e4e7ec;--soft:#f2f4f7;--text:#101828;--muted:#667085;--faint:#98a2b3;--accent:#6366f1;--accent2:#a5b4fc;--pos:#047857;--warn:#b54708;--neg:#b42318}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 [hidden]{display:none!important}
@@ -52,6 +53,23 @@ a{color:var(--accent);text-decoration:none}
 .foot{color:var(--faint);font-size:12px;margin-top:16px;line-height:1.6}
 .warnbox{background:#fffaeb;border:1px solid #fedf89;color:#93370d;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}
 .row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+
+body{background:linear-gradient(180deg,#e0e4fb 0,var(--bg) 220px) no-repeat,var(--bg)}
+header{background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border-radius:16px;padding:14px 20px;box-shadow:0 6px 18px rgba(99,102,241,.3);margin-bottom:20px}
+h1{font-family:"Lilita One","Trebuchet MS",Arial,sans-serif;font-weight:400;font-size:30px;letter-spacing:.01em;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+h1 span{color:#e0e7ff;font-weight:400}
+.hright{color:#e0e7ff}.hright a{color:#fff}
+.card{border-radius:16px;border:1px solid #e3e6f5;box-shadow:0 2px 4px rgba(16,24,40,.04),0 8px 20px rgba(80,90,160,.09);padding:18px 20px}
+.kpis{gap:14px;margin-bottom:14px}
+.kpis .card{border-top:4px solid var(--ka,#6366f1)}
+.kpis .card:nth-child(5n+1){--ka:#6366f1}.kpis .card:nth-child(5n+2){--ka:#06b6d4}.kpis .card:nth-child(5n+3){--ka:#f59e0b}.kpis .card:nth-child(5n+4){--ka:#ec4899}.kpis .card:nth-child(5n+5){--ka:#10b981}
+.v{font-size:34px;font-weight:800;letter-spacing:-.03em}
+.delta{font-size:12.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:#f2f4f7}
+.delta.up{background:#d1fae5;color:#047857}.delta.down{background:#fee2e2;color:#b42318}
+h2{font-size:15px;font-weight:700}
+.grid2{gap:14px;margin-top:14px}
+.seg button.on{background:#6366f1;color:#fff}
+.pill{color:var(--text)}
 </style>
 </head>
 <body>
@@ -150,7 +168,7 @@ function chart(){
   if(metric==='cum'){let run=sum(all.slice(0,all.length-src.length),d=>d.keptUSD);val=src.map(d=>run+=d.keptUSD);isMoney=true}
   else if(metric==='daily'){val=src.map(d=>d.keptUSD);isMoney=true}
   else if(metric==='dl')val=src.map(d=>d.downloads);
-  else if(metric==='traffic'){val=src.map(d=>d.impressions||0);s2=src.map(d=>d.pageViews||0);$('chNote').innerHTML='<span style="color:#2563eb">━</span> impressions &nbsp; <span style="color:#93c5fd">╍</span> product page views'}
+  else if(metric==='traffic'){val=src.map(d=>d.impressions||0);s2=src.map(d=>d.pageViews||0);$('chNote').innerHTML='<span style="color:#6366f1">━</span> impressions &nbsp; <span style="color:#a5b4fc">╍</span> product page views'}
   else val=src.map(d=>d.sessions||0);
   const W=Math.max(300,Math.round(svg.getBoundingClientRect().width)||1000),H=250,pl=56,pr=12,pt=12,pb=26,n=src.length,max=Math.max(isMoney?1:4,...val,...(s2||[]));
   const mag=Math.pow(10,Math.floor(Math.log10(max))),top=Math.ceil(max/mag)*mag;
@@ -159,11 +177,11 @@ function chart(){
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   let g='';
   for(let k=0;k<=4;k++){const vv=top*k/4,yy=y(vv);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#eef0f3"/><text x="${pl-8}" y="${yy+4}" fill="#98a2b3" font-size="11" text-anchor="end">${lbl(vv)}</text>`}
-  if(metric==='daily'||metric==='dl'){const bw=Math.max(3,(W-pl-pr)/n*0.62);val.forEach((v,i)=>g+=`<rect x="${x(i)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(0,H-pb-y(v))}" rx="2" fill="#2563eb"><title>${src[i].date}: ${lbl(v)}</title></rect>`)}
+  if(metric==='daily'||metric==='dl'){const bw=Math.max(3,(W-pl-pr)/n*0.62);val.forEach((v,i)=>g+=`<rect x="${x(i)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(0,H-pb-y(v))}" rx="2" fill="#6366f1"><title>${src[i].date}: ${lbl(v)}</title></rect>`)}
   else{const line=a=>a.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
-    g+=`<path d="${line(val)} L${x(n-1)},${H-pb} L${x(0)},${H-pb} Z" fill="#2563eb" opacity=".07"/><path d="${line(val)}" fill="none" stroke="#2563eb" stroke-width="2"/>`;
-    if(s2)g+=`<path d="${line(s2)}" fill="none" stroke="#93c5fd" stroke-width="2" stroke-dasharray="5 4"/>`;
-    if(n<=40)val.forEach((v,i)=>g+=`<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="#2563eb"><title>${src[i].date}: ${lbl(v)}</title></circle>`)}
+    g+=`<path d="${line(val)} L${x(n-1)},${H-pb} L${x(0)},${H-pb} Z" fill="#6366f1" opacity=".16"/><path d="${line(val)}" fill="none" stroke="#6366f1" stroke-width="2"/>`;
+    if(s2)g+=`<path d="${line(s2)}" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-dasharray="5 4"/>`;
+    if(n<=40)val.forEach((v,i)=>g+=`<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="#6366f1"><title>${src[i].date}: ${lbl(v)}</title></circle>`)}
   const step=Math.max(1,Math.ceil(n/7));for(let i=0;i<n;i+=step)g+=`<text x="${x(i)}" y="${H-8}" fill="#98a2b3" font-size="11" text-anchor="middle">${md(src[i].date)}</text>`;
   svg.innerHTML=g;
 }
@@ -187,11 +205,7 @@ function render(){
   $('kBuy').textContent=fmt(buys);$('kBuyS').textContent=`${pct(buys,dl)} of downloads${refunds?` · ${refunds} refunded`:''}`;
   if(D.subs){$('kClub').textContent=fmt(D.subs.active);$('kClubS').textContent=`as of ${md(D.subs.date)}${D.subs.trials?` · ${D.subs.trials} on trial`:''}${D.subs.billingRetry?` · ${D.subs.billingRetry} payment issue`:''}`}
   const rv=D.reviews||[];
-  // the App Store's own star average (counts star-only ratings too) wins over an average of the written reviews alone
-  const RT=D.ratings||{};
-  if(RT.count){$('kRate').innerHTML=`${(+RT.avg).toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${RT.count} rating${RT.count==1?'':'s'} · ${rv.length} written`}
-  else if(rv.length){const avg=sum(rv,r=>r.rating)/rv.length;$('kRate').innerHTML=`${avg.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${rv.length} written review${rv.length==1?'':'s'}`}
-  else $('kRateS').textContent='none on the App Store yet';
+  if(rv.length){const avg=sum(rv,r=>r.rating)/rv.length;$('kRate').innerHTML=`${avg.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${rv.length} written review${rv.length==1?'':'s'}`}
   // funnel
   const a7=an.slice(-7);
   if(an.length){const imp=sum(a7,d=>d.impressions),pv=sum(a7,d=>d.pageViews),fd=sum(a7,d=>d.firstDownloads),ses=sum(a7,d=>d.sessions),dev=sum(a7,d=>d.activeDevices),cr=sum(a7,d=>d.crashes),del=sum(a7,d=>d.deletions);
@@ -218,12 +232,8 @@ function render(){
   h+=`<div class="row"><a href="https://apps.apple.com/app/id6815023745" target="_blank" rel="noopener">App Store page ↗</a><a href="https://appstoreconnect.apple.com/apps/6815023745" target="_blank" rel="noopener">App Store Connect ↗</a></div>`;
   $('status').innerHTML=h;
   // ratings
-  // the headline is the App Store's own star rating (every rating, written or not); the bars below can only count
-  // the WRITTEN reviews, because Apple doesn't hand out the breakdown of star-only ratings
-  const cnt=[0,0,0,0,0];rv.forEach(r=>cnt[r.rating-1]++);const cm=Math.max(1,...cnt);
-  const RA=D.ratings||{},rn=RA.count||0,ravg=rn?+RA.avg:(rv.length?sum(rv,r=>r.rating)/rv.length:0);
-  $('dist').innerHTML=`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span class="v">${rn||rv.length?ravg.toFixed(1):'–'}</span><span class="stars">${stars(Math.round(ravg))}</span><span class="s">${rn?`${rn} rating${rn==1?'':'s'} on the App Store`:'no star ratings yet'}</span></div>`+
-   (rv.length?'<div class="dist">'+[5,4,3,2,1].map(s=>`<span>${s}★</span><div class="bar" style="margin:0"><i style="width:${100*cnt[s-1]/cm}%;background:#f59e0b"></i></div><span style="text-align:right">${cnt[s-1]}</span>`).join('')+'</div><div class="s" style="margin-top:6px">bars = written reviews only</div>':'');
+  const cnt=[0,0,0,0,0];rv.forEach(r=>cnt[r.rating-1]++);const cm=Math.max(1,...cnt),avg=rv.length?sum(rv,r=>r.rating)/rv.length:0;
+  $('dist').innerHTML=rv.length?`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span class="v">${avg.toFixed(1)}</span><span class="stars">${stars(Math.round(avg))}</span><span class="s">${rv.length} reviews</span></div><div class="dist">`+[5,4,3,2,1].map(s=>`<span>${s}★</span><div class="bar" style="margin:0"><i style="width:${100*cnt[s-1]/cm}%;background:#f59e0b"></i></div><span style="text-align:right">${cnt[s-1]}</span>`).join('')+'</div>':'<div class="empty">No ratings with reviews yet.</div>';
   renderReviews();chart();
 }
 const stars=n=>'★'.repeat(n)+'<i>'+'★'.repeat(5-n)+'</i>';
