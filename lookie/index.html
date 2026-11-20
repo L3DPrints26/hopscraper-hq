@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Lookie HQ</title>
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  Lookie HQ: private App Store dashboard for Lookie Video Editor.
+  Source: scripts/dashboard/index.html in the video-editor repo. Data comes from hop-dash/fetch.js on the
+  home Mac (config-lookie.json): plain lookie-data.json on the home network, AES-GCM data.enc.json on the
+  public site (same password as Hopscraper HQ; it never leaves the browser).
+-->
+<style>
+:root{
+  --bg:#0a0910;--bg2:#0f0d17;--card:#14121d;--card2:#1a1726;--line:#262236;--line2:#322d47;
+  --text:#f3f1f9;--muted:#9b95ad;--faint:#6b6580;
+  --accent:#8b6cff;--accent2:#b49cff;--accentBg:rgba(139,108,255,.14);
+  --pos:#34d399;--posBg:rgba(52,211,153,.12);--neg:#f87171;--negBg:rgba(248,113,113,.12);--warn:#fbbf24;--warnBg:rgba(251,191,36,.12);
+  --star:#fbbf24;--r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 500px at 15% -10%,rgba(139,108,255,.16),transparent 60%),radial-gradient(900px 400px at 100% 0%,rgba(56,189,248,.07),transparent 60%),var(--bg);min-height:100vh}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+.num{font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+
+/* lock */
+#lock{min-height:100vh;display:grid;place-items:center;padding:24px}
+.lockcard{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:32px 28px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.lockcard img{width:64px;height:64px;border-radius:16px;margin-bottom:14px}
+.lockcard h1{font-size:20px;margin:0 0 4px;font-weight:600}
+.lockcard p{color:var(--muted);margin:0 0 20px}
+.lockcard input[type=password]{width:100%;height:46px;border-radius:12px;border:1px solid var(--line2);background:var(--bg2);color:var(--text);padding:0 14px;font:inherit;font-size:15px;outline:none}
+.lockcard input[type=password]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentBg)}
+.lockcard label{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--muted);margin:12px 0 16px;font-size:13px}
+.btn{height:46px;width:100%;border:0;border-radius:12px;background:var(--accent);color:#fff;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.err{color:var(--neg);font-size:13px;min-height:18px;margin-top:10px}
+
+/* layout */
+.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 60px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+header img{width:40px;height:40px;border-radius:11px}
+header h1{font-size:19px;margin:0;font-weight:600;letter-spacing:-.01em}
+header .sub{color:var(--muted);font-size:12px}
+header .sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12.5px;color:var(--text);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.dot.pos{background:var(--pos);box-shadow:0 0 0 3px var(--posBg)}.dot.warn{background:var(--warn);box-shadow:0 0 0 3px var(--warnBg)}.dot.neg{background:var(--neg);box-shadow:0 0 0 3px var(--negBg)}
+.linkbtn{background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;padding:6px}
+.linkbtn:hover{color:var(--text)}
+.warnbox{background:var(--warnBg);border:1px solid rgba(251,191,36,.3);color:#fde68a;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:13px}
+
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:16px}
+.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.three{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:1060px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two,.three{grid-template-columns:minmax(0,1fr)}.wrap{padding:16px 16px 48px}.card{padding:16px}.kpi .v{font-size:24px}.hint{display:none}header .pill.hop{display:none}.charthead .t{flex-basis:100%}#metric{width:100%}#metric button{flex:1;padding:0 4px}}
+
+.card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;min-width:0}
+.card h2{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 14px;letter-spacing:.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .sp{flex:1}
+.section{margin-top:16px}
+
+.kpi .lbl{color:var(--muted);font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:6px}
+.kpi .v{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:6px 0 2px;line-height:1.1}
+.kpi .s{color:var(--muted);font-size:12px;min-height:17px}
+.kpi svg{display:block;width:100%;height:30px;margin-top:10px}
+.delta{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:6px;margin-left:6px}
+.delta.up{color:var(--pos);background:var(--posBg)}.delta.down{color:var(--neg);background:var(--negBg)}.delta.flat{color:var(--muted);background:var(--line)}
+
+.seg{display:inline-flex;max-width:100%;overflow-x:auto;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:none;color:var(--muted);font:500 12.5px Inter,system-ui,sans-serif;height:28px;padding:0 11px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--card2);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 1px 3px rgba(0,0,0,.4)}
+.charthead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.charthead .t{font-size:15px;font-weight:600;flex:1;min-width:160px}
+.chartbox{position:relative}
+#chart{display:block;width:100%;height:260px}
+.tip{position:absolute;pointer-events:none;background:#0b0a12;border:1px solid var(--line2);border-radius:10px;padding:7px 10px;font-size:12px;white-space:nowrap;transform:translate(-50%,-110%);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.tip b{display:block;font-size:14px}
+.legend{color:var(--muted);font-size:12px;margin-top:6px;display:flex;gap:14px}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+/* ratings */
+.bigrate{display:flex;align-items:center;gap:18px;margin-bottom:16px}
+.bigrate .n{font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.stars{color:var(--star);letter-spacing:1px;font-size:15px}.stars i{color:#3a3450;font-style:normal}
+.muted{color:var(--muted)}.faint{color:var(--faint)}.small{font-size:12px}
+.split{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--line);margin:6px 0 10px}
+.split i{display:block;height:100%}
+.splitkey{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.splitkey b{color:var(--text);font-weight:600}
+.splitkey i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#rhist{display:block;width:100%;height:120px;margin-top:16px}
+
+.dist{display:grid;grid-template-columns:auto 1fr auto;gap:7px 10px;align-items:center;font-size:12.5px;color:var(--muted)}
+.bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;background:var(--accent)}
+.revs{margin-top:16px;display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:2px}
+.rev{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.rev .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.rev .top b{font-weight:600}
+.rev p{margin:2px 0 8px;color:#d9d5e6;white-space:pre-wrap;word-break:break-word}
+.empty{color:var(--faint);text-align:center;padding:26px 10px;font-size:13px}
+
+/* funnel */
+.fun{display:flex;flex-direction:column;gap:12px}
+.fun .row{display:grid;grid-template-columns:110px 1fr 70px;gap:12px;align-items:center}
+.fun .bar{height:26px;border-radius:8px}
+.fun .bar i{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.fun .lbl{color:var(--muted);font-size:12.5px}
+.fun .val{text-align:right;font-weight:600}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat .v{font-size:22px;font-weight:600;margin-top:2px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--faint);font-weight:500;font-size:12px;text-align:left;padding:0 0 8px}
+td{padding:9px 0;border-top:1px solid var(--line)}
+.r{text-align:right}
+.rows .row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.rows .row:first-child{border-top:0;padding-top:0}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:2px 9px;border-radius:999px}
+.tag.pos{color:var(--pos);background:var(--posBg)}.tag.warn{color:var(--warn);background:var(--warnBg)}.tag.neg{color:var(--neg);background:var(--negBg)}.tag.n{color:var(--muted);background:var(--line)}
+footer{color:var(--faint);font-size:12px;text-align:center;margin-top:28px}
+</style>
+</head>
+<body>
+
+<div id="lock" hidden>
+  <form class="lockcard" id="lockForm">
+    <img src="icon.png" alt="">
+    <h1>Lookie HQ</h1>
+    <p>Private dashboard</p>
+    <input type="password" id="lockPw" placeholder="Password" autocomplete="current-password" required>
+    <label><input type="checkbox" id="lockKeep" checked> Keep me signed in on this device</label>
+    <button class="btn">Open</button>
+    <div class="err" id="lockErr"></div>
+  </form>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <img src="icon.png" alt="">
+    <div><h1>Lookie HQ</h1><div class="sub" id="upd"></div></div>
+    <div class="sp"></div>
+    <span id="livepill"></span>
+    <a class="pill hop" href="../" title="Hopscraper dashboard">Hopscraper ↗</a>
+    <button class="linkbtn" id="out">Sign out</button>
+  </header>
+  <div id="warn"></div>
+
+  <div class="grid kpis">
+    <div class="card kpi"><div class="lbl">Downloads</div><div class="v num" id="kDl">–</div><div class="s" id="kDlS"></div><svg id="spDl"></svg></div>
+    <div class="card kpi"><div class="lbl">Earnings (yours)</div><div class="v num" id="kNet">–</div><div class="s" id="kNetS"></div><svg id="spNet"></svg></div>
+    <div class="card kpi"><div class="lbl">Premium members</div><div class="v num" id="kSub">–</div><div class="s" id="kSubS"></div></div>
+    <div class="card kpi"><div class="lbl">Star rating</div><div class="v num" id="kRate">–</div><div class="s" id="kRateS"></div></div>
+    <div class="card kpi"><div class="lbl">Written reviews</div><div class="v num" id="kRev">–</div><div class="s" id="kRevS"></div></div>
+    <div class="card kpi"><div class="lbl">Store page views</div><div class="v num" id="kPv">–</div><div class="s" id="kPvS"></div><svg id="spPv"></svg></div>
+  </div>
+
+  <div class="card">
+    <div class="charthead">
+      <div class="t" id="chTitle">Downloads</div>
+      <div class="seg" id="metric">
+        <button data-m="dl" class="on">Downloads</button><button data-m="net">Earnings</button><button data-m="traffic">Store traffic</button><button data-m="use">Sessions</button>
+      </div>
+      <div class="seg" id="range"><button data-r="7">7D</button><button data-r="30" class="on">30D</button><button data-r="0">All</button></div>
+    </div>
+    <div class="chartbox"><svg id="chart"></svg><div class="tip" id="tip" hidden></div></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="grid two section">
+    <div class="card">
+      <h2>Ratings <span class="faint small hint" style="font-weight:400">every star rating on the App Store</span></h2>
+      <div id="ratings"></div>
+    </div>
+    <div class="card">
+      <h2>Reviews <span class="faint small hint" style="font-weight:400">with a written comment</span><span class="sp"></span>
+        <span class="seg" id="rf"><button data-f="all" class="on">All</button><button data-f="5">5★</button><button data-f="4">4★</button><button data-f="3">3★</button><button data-f="low">1–2★</button></span>
+      </h2>
+      <div id="reviews"></div>
+    </div>
+  </div>
+
+  <div class="grid three section">
+    <div class="card"><h2>App Store funnel <span class="faint small hint" style="font-weight:400">last 7 days</span></h2><div id="funnel"></div></div>
+    <div class="card"><h2>Usage <span class="faint small hint" style="font-weight:400">last 7 days</span></h2><div id="usage"></div></div>
+    <div class="card"><h2>Releases</h2><div class="rows" id="status"></div></div>
+  </div>
+
+  <div class="grid three section">
+    <div class="card"><h2>Premium &amp; purchases</h2><div id="prods"></div></div>
+    <div class="card"><h2>Countries</h2><div id="countries"></div></div>
+    <div class="card"><h2>Devices</h2><div id="devices"></div></div>
+  </div>
+
+  <footer>Numbers come straight from App Store Connect and update every hour. Apple publishes sales a day late.</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n||0).toLocaleString();
+const money=n=>(n<0?'-':'')+'$'+(Math.abs(n)>=1000?Math.round(Math.abs(n)).toLocaleString():Math.abs(n||0).toFixed(2));
+const pct=(a,b)=>b?(100*a/b).toFixed(a/b<0.1?1:0)+'%':'–';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ago=d=>{const m=(Date.now()-new Date(d))/6e4;return m<1?'just now':m<60?Math.round(m)+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
+const md=d=>{const [y,m,dd]=d.split('-');return new Date(+y,+m-1,+dd).toLocaleDateString(undefined,{month:'short',day:'numeric'})};
+const sum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
+const STATE={READY_FOR_SALE:['Live','pos'],READY_FOR_DISTRIBUTION:['Live','pos'],PROCESSING_FOR_DISTRIBUTION:['Going live','warn'],WAITING_FOR_REVIEW:['Waiting for review','warn'],IN_REVIEW:['In review','warn'],PENDING_DEVELOPER_RELEASE:['Approved, not released','warn'],PREPARE_FOR_SUBMISSION:['Being prepared','n'],REJECTED:['Rejected','neg'],METADATA_REJECTED:['Metadata rejected','neg'],DEVELOPER_REJECTED:['Pulled from review','n'],COMPLETE:['Done','pos'],UNRESOLVED_ISSUES:['Needs a fix','neg'],READY_FOR_REVIEW:['Ready to send','n'],CANCELING:['Canceling','n'],REPLACED_WITH_NEW_VERSION:['Replaced','n']};
+const nice=s=>STATE[s]?STATE[s][0]:String(s||'').toLowerCase().replace(/_/g,' ');
+const tone=s=>STATE[s]?STATE[s][1]:'n';
+const CN={US:'United States',GB:'United Kingdom',CA:'Canada',AU:'Australia',DE:'Germany',FR:'France',JP:'Japan',IN:'India',BR:'Brazil',MX:'Mexico',ES:'Spain',IT:'Italy',NL:'Netherlands',SE:'Sweden',KR:'South Korea',PH:'Philippines',ID:'Indonesia',NZ:'New Zealand',IE:'Ireland',SG:'Singapore',ZA:'South Africa',PL:'Poland',CH:'Switzerland',NO:'Norway',DK:'Denmark',FI:'Finland',BE:'Belgium',AT:'Austria',PT:'Portugal',TR:'Turkey',AE:'UAE',SA:'Saudi Arabia',HK:'Hong Kong',TW:'Taiwan',MY:'Malaysia',TH:'Thailand',VN:'Vietnam',AR:'Argentina',CL:'Chile',CO:'Colombia',PE:'Peru',EG:'Egypt',NG:'Nigeria',PK:'Pakistan',IL:'Israel'};
+const stars=n=>'★'.repeat(n)+'<i>'+'★'.repeat(5-n)+'</i>';
+let D=null,metric='dl',range=30,rfilter='all';
+
+function delta(cur,prev){if(!prev&&!cur)return '';if(!prev)return '<span class="delta up">new</span>';const d=(cur-prev)/prev*100;const c=d>0.5?'up':d<-0.5?'down':'flat';return `<span class="delta ${c}">${d>0?'▲':d<0?'▼':''}${Math.abs(d).toFixed(0)}%</span>`}
+const anDays=()=>{const b=(D.analytics&&D.analytics.byDate)||{};return Object.keys(b).sort().map(d=>({date:d,...b[d]}))};
+// a continuous run of days (missing days = 0), so gaps don't make the chart lie
+function fill(rows,from){if(!rows.length&&!from)return [];const by={};rows.forEach(r=>by[r.date]=r);
+  const start=new Date((from||rows[0].date)+'T12:00:00Z'),end=new Date((rows.length?rows[rows.length-1].date:from)+'T12:00:00Z'),out=[];
+  for(let d=start;d<=end;d=new Date(+d+864e5)){const k=d.toISOString().slice(0,10);out.push(by[k]||{date:k})}return out}
+
+function spark(id,vals,color){const s=$(id);if(!s)return;const n=vals.length;if(n<2||!vals.some(v=>v)){s.innerHTML='';return}
+  const W=200,H=30,max=Math.max(...vals,1),x=i=>W*i/(n-1),y=v=>H-2-(H-6)*v/max;
+  const p=vals.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
+  s.setAttribute('viewBox',`0 0 ${W} ${H}`);s.setAttribute('preserveAspectRatio','none');
+  s.innerHTML=`<defs><linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${p} L${W},${H} L0,${H} Z" fill="url(#g${id})"/><path d="${p}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`}
+
+let pts=[];
+function chart(){
+  const svg=$('chart'),ana=metric==='traffic'||metric==='use';
+  let src=ana?fill(anDays()):fill(D.days||[]);if(range)src=src.slice(-range);
+  $('chTitle').textContent={dl:'Downloads per day',net:'Earnings per day (what you keep)',traffic:'App Store impressions and page views',use:'Sessions per day'}[metric];
+  $('legend').innerHTML=metric==='traffic'?'<span><i style="background:var(--accent)"></i>Impressions</span><span><i style="background:#38bdf8"></i>Page views</span>':'';
+  const W=Math.max(300,Math.round(svg.getBoundingClientRect().width)||1000),H=260;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  if(!src.length){svg.innerHTML=`<text x="${W/2}" y="${H/2}" fill="#6b6580" font-size="14" text-anchor="middle" font-family="Inter,sans-serif">${ana?'Apple starts sending App Analytics a day or two after it is switched on.':'No sales data yet.'}</text>`;pts=[];return}
+  const isMoney=metric==='net';
+  const a=src.map(d=>metric==='dl'?d.downloads||0:metric==='net'?d.keptUSD||0:metric==='traffic'?d.impressions||0:d.sessions||0);
+  const b=metric==='traffic'?src.map(d=>d.pageViews||0):null;
+  const pl=48,pr=10,pt=14,pb=28,n=src.length,max=Math.max(isMoney?1:4,...a,...(b||[]));
+  const mag=Math.pow(10,Math.floor(Math.log10(max))),top=Math.ceil(max/mag)*mag;
+  const x=i=>n===1?(pl+W-pr)/2:pl+(W-pl-pr)*i/(n-1),y=v=>H-pb-(H-pt-pb)*v/top;
+  const lbl=v=>isMoney?(top>=10?'$'+Math.round(v).toLocaleString():money(v)):fmt(v);
+  let g=`<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b6cff" stop-opacity=".38"/><stop offset="1" stop-color="#8b6cff" stop-opacity="0"/></linearGradient></defs>`;
+  for(let k=0;k<=4;k++){const vv=top*k/4,yy=y(vv);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#221e30"/><text x="${pl-10}" y="${yy+4}" fill="#6b6580" font-size="11" text-anchor="end" font-family="Inter,sans-serif">${lbl(vv)}</text>`}
+  if(metric==='dl'||metric==='net'){const bw=Math.max(3,Math.min(28,(W-pl-pr)/n*0.6));a.forEach((v,i)=>g+=`<rect x="${x(i)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(v?2:0,H-pb-y(v))}" rx="${Math.min(5,bw/3)}" fill="url(#gb)"/>`);
+    g=g.replace('</defs>','<linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b49cff"/><stop offset="1" stop-color="#7c5cf5"/></linearGradient></defs>')}
+  else{const line=arr=>arr.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
+    g+=`<path d="${line(a)} L${x(n-1)},${H-pb} L${x(0)},${H-pb} Z" fill="url(#ga)"/><path d="${line(a)}" fill="none" stroke="#8b6cff" stroke-width="2.2" stroke-linejoin="round"/>`;
+    if(b)g+=`<path d="${line(b)}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linejoin="round"/>`}
+  const step=Math.max(1,Math.ceil(n/Math.max(2,Math.floor((W-pl-pr)/62))));for(let i=0;i<n;i+=step)g+=`<text x="${x(i)}" y="${H-8}" fill="#6b6580" font-size="11" text-anchor="${n>1&&i===0?'start':n>1&&x(i)>W-pr-30?'end':'middle'}" font-family="Inter,sans-serif">${md(src[i].date)}</text>`;
+  g+=`<line id="hl" x1="0" x2="0" y1="${pt}" y2="${H-pb}" stroke="#3a3450" stroke-dasharray="3 3" visibility="hidden"/>`;
+  svg.innerHTML=g;
+  pts=src.map((d,i)=>({x:x(i),y:y(Math.max(a[i],b?b[i]:0)),date:d.date,t:metric==='traffic'?`${fmt(a[i])} impressions · ${fmt(b[i])} views`:lbl(a[i])+(metric==='dl'?' downloads':metric==='use'?' sessions':'')}));
+}
+function tipAt(ev){const svg=$('chart'),tip=$('tip');if(!pts.length)return;const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal,sx=r.width/vb.width;
+  const mx=(ev.clientX-r.left)/sx;let best=pts[0];for(const p of pts)if(Math.abs(p.x-mx)<Math.abs(best.x-mx))best=p;
+  const hl=$('hl');if(hl){hl.setAttribute('x1',best.x);hl.setAttribute('x2',best.x);hl.setAttribute('visibility','visible')}
+  tip.hidden=false;tip.style.left=(best.x*sx)+'px';tip.style.top=(best.y*sx)+'px';tip.innerHTML=`<span class="muted">${md(best.date)}</span><b>${esc(best.t)}</b>`}
+$('chart').addEventListener('pointermove',tipAt);$('chart').addEventListener('pointerleave',()=>{$('tip').hidden=true;const hl=$('hl');hl&&hl.setAttribute('visibility','hidden')});
+
+function render(){
+  $('app').hidden=false;
+  const days=fill(D.days||[]),an=fill(anDays()),st=D.status,rv=D.reviews||[],RT=D.ratings||{};
+  $('livepill').innerHTML=st?`<span class="pill"><span class="dot ${tone(st.state)}"></span>${esc(nice(st.state))} · v${esc(st.version)}</span>`:'';
+  $('upd').textContent='Updated '+ago(D.updated);
+  const errs=D.errors||[];$('warn').innerHTML=errs.length?`<div class="warnbox">Some data didn't load: ${esc(errs.join('; ').slice(0,240))}</div>`:'';
+
+  const L7=days.slice(-7),P7=days.slice(-14,-7);
+  const dl=sum(days,d=>d.downloads),d7=sum(L7,d=>d.downloads);
+  $('kDl').textContent=fmt(dl);$('kDlS').innerHTML=`7 days: ${fmt(d7)}${delta(d7,sum(P7,d=>d.downloads))}`;spark('spDl',days.slice(-30).map(d=>d.downloads||0),'#8b6cff');
+  const net=sum(days,d=>d.keptUSD),n7=sum(L7,d=>d.keptUSD),paid=sum(days,d=>d.paidUSD);
+  $('kNet').textContent=money(net);$('kNetS').innerHTML=paid?`buyers paid ${money(paid)}`:`7 days: ${money(n7)}`;spark('spNet',days.slice(-30).map(d=>d.keptUSD||0),'#34d399');
+  if(D.subs){$('kSub').textContent=fmt(D.subs.active);$('kSubS').textContent=D.subs.none?'nobody yet':`as of ${md(D.subs.date)}${D.subs.trials?` · ${D.subs.trials} on trial`:''}`}
+  if(RT.count){$('kRate').innerHTML=`${(+RT.avg).toFixed(1)} <span class="stars" style="font-size:18px">★</span>`;$('kRateS').textContent=`from ${fmt(RT.count)} rating${RT.count==1?'':'s'}`}else $('kRateS').textContent='no ratings yet';
+  $('kRev').textContent=fmt(rv.length);$('kRevS').textContent=rv.length?`latest ${ago(rv[0].date)}`:'none yet';
+  const a7=an.slice(-7),pv7=sum(a7,d=>d.pageViews);
+  if(an.length){$('kPv').textContent=fmt(pv7);$('kPvS').textContent='last 7 days';spark('spPv',an.slice(-30).map(d=>d.pageViews||0),'#38bdf8')}else $('kPvS').textContent='arrives in a day or two';
+
+  // RATINGS: every star rating (Apple's public count), split into star-only vs with a written review
+  const usRev=rv.filter(r=>!r.country||r.country==='USA'||r.country==='US').length,cnt=RT.count||0,only=Math.max(0,cnt-usRev),withTxt=Math.min(cnt,usRev);
+  const hist=(D.ratingsHistory||[]).filter(h=>h.count>0);
+  $('ratings').innerHTML=cnt?`<div class="bigrate"><div class="n num">${(+RT.avg).toFixed(1)}</div><div><div class="stars" style="font-size:20px">${stars(Math.round(RT.avg))}</div><div class="muted small" style="margin-top:4px">${fmt(cnt)} rating${cnt==1?'':'s'} in the US App Store</div></div></div>
+    <div class="split"><i style="width:${100*only/cnt}%;background:var(--accent)"></i><i style="width:${100*withTxt/cnt}%;background:#38bdf8"></i></div>
+    <div class="splitkey"><span><i style="background:var(--accent)"></i><b>${fmt(only)}</b> stars only</span><span><i style="background:#38bdf8"></i><b>${fmt(withTxt)}</b> with a written review</span></div>
+    <div class="stats" style="margin-top:16px">${(()=>{const wk=hist.filter(h=>h.date<=new Date(Date.now()-7*864e5).toISOString().slice(0,10)).pop();const nw=wk?cnt-wk.count:null;const first=hist[0];
+      return `<div class="stat"><div class="muted small">New in the last 7 days</div><div class="v num">${nw==null?'–':(nw>0?'+':'')+fmt(nw)}</div></div><div class="stat"><div class="muted small">Tracking since</div><div class="v" style="font-size:16px;margin-top:6px">${first?md(first.date):'today'}</div></div>`})()}</div>
+    ${hist.length>1?'<svg id="rhist"></svg><div class="faint small">Rating count over time</div>':''}`
+   :`<div class="bigrate"><div class="n num faint">–</div><div><div class="stars" style="font-size:20px">${stars(0)}</div><div class="muted small" style="margin-top:4px">No ratings yet. They show up here as soon as someone taps the stars.</div></div></div>`;
+  if(hist.length>1){const s=$('rhist'),W=500,H=120,n=hist.length,mx=Math.max(...hist.map(h=>h.count)),x=i=>8+(W-16)*i/(n-1),y=v=>H-10-(H-22)*v/mx;
+    const p=hist.map((h,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(h.count).toFixed(1)).join(' ');s.setAttribute('viewBox',`0 0 ${W} ${H}`);s.setAttribute('preserveAspectRatio','none');
+    s.innerHTML=`<path d="${p} L${x(n-1)},${H} L${x(0)},${H} Z" fill="rgba(139,108,255,.15)"/><path d="${p}" fill="none" stroke="#8b6cff" stroke-width="2" vector-effect="non-scaling-stroke"/>`}
+
+  renderReviews();funnel(a7);status();tables(days);chart();
+}
+
+function renderReviews(){
+  const rv=D.reviews||[],cnt=[0,0,0,0,0];rv.forEach(r=>cnt[r.rating-1]++);const cm=Math.max(1,...cnt);
+  const avg=rv.length?sum(rv,r=>r.rating)/rv.length:0;
+  const list=rv.filter(r=>rfilter==='all'||(rfilter==='low'?r.rating<=2:r.rating===+rfilter));
+  $('reviews').innerHTML=(rv.length?`<div style="display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center">
+      <div><div style="font-size:34px;font-weight:700;letter-spacing:-.02em" class="num">${avg.toFixed(1)}</div><div class="stars">${stars(Math.round(avg))}</div><div class="muted small">${rv.length} review${rv.length==1?'':'s'}</div></div>
+      <div class="dist">${[5,4,3,2,1].map(s=>`<span>${s}★</span><div class="bar"><i style="width:${100*cnt[s-1]/cm}%;background:var(--star)"></i></div><span class="num">${cnt[s-1]}</span>`).join('')}</div></div>`:'')+
+   '<div class="revs">'+(list.length?list.slice(0,50).map(r=>`<div class="rev"><div class="top"><span class="stars">${stars(r.rating)}</span><b>${esc(r.title)}</b></div><p>${esc(r.body)}</p><div class="faint small">${esc(r.who)} · ${esc(CN[r.country]||(r.country==='USA'?'United States':r.country)||'')} · ${new Date(r.date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</div></div>`).join('')
+     :`<div class="empty">${rv.length?'No reviews with this rating.':'No written reviews yet. When someone writes one, it shows up here with their stars.'}</div>`)+'</div>';
+}
+
+function funnel(a7){
+  if(!a7.length){const m=D.analytics&&D.analytics.requested?'App Analytics is switched on. Apple starts sending it a day or two later.':'App Analytics is not available yet.';$('funnel').innerHTML=`<div class="empty">${m}</div>`;$('usage').innerHTML=`<div class="empty">${m}</div>`;return}
+  const imp=sum(a7,d=>d.impressions),pv=sum(a7,d=>d.pageViews),fd=sum(a7,d=>d.firstDownloads),re=sum(a7,d=>d.redownloads),mx=Math.max(1,imp);
+  const row=(l,v,s)=>`<div class="row"><span class="lbl">${l}</span><div class="bar"><i style="width:${Math.max(v?2:0,100*v/mx)}%"></i></div><span class="val num">${fmt(v)}</span></div>${s?`<div class="faint small" style="margin:-6px 0 0 122px">${s}</div>`:''}`;
+  $('funnel').innerHTML='<div class="fun">'+row('Impressions',imp)+row('Page views',pv,pct(pv,imp)+' of impressions')+row('Downloads',fd,pct(fd,pv)+' of page views'+(re?` · plus ${fmt(re)} re-downloads`:''))+'</div>';
+  const ses=sum(a7,d=>d.sessions),dev=sum(a7,d=>d.activeDevices),cr=sum(a7,d=>d.crashes),del=sum(a7,d=>d.deletions);
+  const stat=(l,v,s)=>`<div class="stat"><div class="muted small">${l}</div><div class="v num">${v}</div>${s?`<div class="faint small">${s}</div>`:''}</div>`;
+  $('usage').innerHTML='<div class="stats">'+stat('Sessions',fmt(ses))+stat('Active devices',fmt(dev/Math.max(1,a7.length)),'per day')+stat('Crashes',fmt(cr),ses?pct(cr,ses)+' of sessions':'')+stat('Deleted',fmt(del))+'</div>';
+}
+
+function status(){
+  const st=D.status,rs=D.review,b=D.builds||[],id=(D.app&&D.app.id)||'6835189266';let h='';
+  if(st)h+=`<div class="row"><span>Version ${esc(st.version)}</span><span class="tag ${tone(st.state)}">${esc(nice(st.state))}</span></div>`;
+  if(rs)h+=`<div class="row"><span>Last App Review</span><span class="tag ${tone(rs.state)}">${esc(nice(rs.state))}${rs.submitted?' · '+ago(rs.submitted):''}</span></div>`;
+  b.forEach(x=>h+=`<div class="row"><span>Build ${esc(x.build)}</span><span class="muted small">${x.state==='VALID'?'ready':esc(String(x.state).toLowerCase())} · ${ago(x.uploaded)}</span></div>`);
+  h+=`<div class="row"><a href="https://apps.apple.com/app/id${id}" target="_blank" rel="noopener">App Store page ↗</a><a href="https://appstoreconnect.apple.com/apps/${id}" target="_blank" rel="noopener">App Store Connect ↗</a></div>`;
+  $('status').innerHTML=h;
+}
+
+function tables(days){
+  const P={};days.forEach(d=>Object.entries(d.products||{}).forEach(([n,p])=>{const q=P[n]=P[n]||{units:0,refunds:0,keptUSD:0,sub:p.sub};q.units+=p.units;q.refunds+=p.refunds||0;q.keptUSD+=p.keptUSD}));
+  const pl=Object.entries(P).sort((a,b)=>b[1].keptUSD-a[1].keptUSD);
+  $('prods').innerHTML=pl.length?'<table><tr><th>Product</th><th class="r">Sold</th><th class="r">You keep</th></tr>'+pl.map(([n,p])=>`<tr><td>${esc(n)}${p.sub?' <span class="faint small">· subscription</span>':''}</td><td class="r num">${p.units}${p.refunds?` <span class="faint">(−${p.refunds})</span>`:''}</td><td class="r num">${money(p.keptUSD)}</td></tr>`).join('')+'</table>':'<div class="empty">No purchases yet.</div>';
+  const C={};days.forEach(d=>Object.entries(d.countries||{}).forEach(([c,v])=>{const q=C[c]=C[c]||{downloads:0,purchases:0};q.downloads+=v.downloads||0;q.purchases+=v.purchases||0}));
+  const cl=Object.entries(C).sort((a,b)=>b[1].downloads-a[1].downloads).slice(0,8),cm=Math.max(1,...cl.map(c=>c[1].downloads));
+  $('countries').innerHTML=cl.length?cl.map(([c,v])=>`<div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(CN[c]||c)}</span><span class="muted num">${fmt(v.downloads)}${v.purchases?` · ${v.purchases} bought`:''}</span></div><div class="bar" style="margin:6px 0 12px"><i style="width:${100*v.downloads/cm}%"></i></div>`).join(''):'<div class="empty">No downloads yet.</div>';
+  const DV={};days.forEach(d=>Object.entries(d.devices||{}).forEach(([k,v])=>DV[k]=(DV[k]||0)+v));const dt=sum(Object.values(DV),v=>v);
+  $('devices').innerHTML=dt?Object.entries(DV).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(k)}</span><span class="muted num">${fmt(v)} · ${pct(v,dt)}</span></div><div class="bar" style="margin:6px 0 12px"><i style="width:${100*v/dt}%;background:#38bdf8"></i></div>`).join(''):'<div class="empty">No downloads yet.</div>';
+}
+
+function seg(id,attr,cb){document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset[attr])})}
+seg('metric','m',v=>{metric=v;D&&chart()});seg('range','r',v=>{range=+v;D&&chart()});seg('rf','f',v=>{rfilter=v;D&&renderReviews()});
+
+// Data: plain data.json on the Mac's home server; data.enc.json (AES-GCM, PBKDF2 key from the password) on the public site.
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decrypt(E,pw){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(E.salt),iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(E.iv)},key,b64(E.ct))));
+}
+// same storage key as Hopscraper HQ (same site, same password), so signing in once opens both
+const store={get(){try{return localStorage.getItem('hq_pw')||sessionStorage.getItem('hq_pw')}catch(e){return null}},
+  set(pw,keep){try{(keep?localStorage:sessionStorage).setItem('hq_pw',pw)}catch(e){}},
+  clear(){try{localStorage.removeItem('hq_pw');sessionStorage.removeItem('hq_pw')}catch(e){}}};
+let local=null;
+async function load(){
+  if(local!==false){try{const r=await fetch('data.json',{cache:'no-store'});if(r.ok&&/json/.test(r.headers.get('content-type')||'')){local=true;D=await r.json();$('lock').hidden=true;$('out').hidden=true;return render()}}catch(e){}local=false}
+  let E;try{E=await (await fetch('data.enc.json',{cache:'no-store'})).json()}catch(e){$('lock').hidden=false;$('lockErr').textContent='Could not load data.';return}
+  const pw=store.get();if(!pw){$('lock').hidden=false;return}
+  try{D=await decrypt(E,pw);$('lock').hidden=true;render()}
+  catch(e){store.clear();$('app').hidden=true;$('lock').hidden=false;$('lockErr').textContent='Wrong password.'}
+}
+$('lockForm').onsubmit=async ev=>{ev.preventDefault();store.set($('lockPw').value,$('lockKeep').checked);$('lockErr').textContent='';await load()};
+$('out').onclick=ev=>{ev.preventDefault();store.clear();location.reload()};
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>D&&chart(),150)});
+load();setInterval(load,10*60*1000);
+</script>
+</body>
+</html>
