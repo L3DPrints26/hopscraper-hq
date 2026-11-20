@@ -70,6 +70,20 @@ h2{font-size:15px;font-weight:700}
 .grid2{gap:14px;margin-top:14px}
 .seg button.on{background:#6366f1;color:#fff}
 .pill{color:var(--text)}
+
+main{padding:12px 16px 14px;max-width:none}
+header{padding:8px 16px;margin-bottom:10px}h1{font-size:24px}
+.kpis{gap:10px;margin-bottom:10px}.card{padding:10px 14px}.v{font-size:28px;margin-top:0}
+.kpis .card{padding:8px 14px}
+.chart{height:calc(208px + (100vh - 768px)*.6);min-height:140px}
+.head{margin-bottom:6px}
+.grid4{display:grid;gap:10px;margin-top:10px;grid-template-columns:1.2fr .8fr 1fr 1.15fr 1.25fr}
+@media(max-width:1000px){.grid4{grid-template-columns:1fr 1fr}}
+.scr{display:flex;flex-direction:column;height:calc(284px + (100vh - 768px)*.4);min-height:210px;overflow:hidden}.scr .in,.rat #reviews{overflow:auto;flex:1;min-height:0}
+.step{padding:5px 8px}.step .v{font-size:18px}.step .k{font-size:10.5px}.step .s{font-size:11px}.funnel,.mini{gap:6px}.mini{margin-top:6px}
+.foot{display:none}
+#countries th,#countries td{padding-left:2px;padding-right:2px;font-size:12px}#countries th{font-size:10px}
+#chNote,#fNote{display:none}
 </style>
 </head>
 <body>
@@ -107,8 +121,8 @@ h2{font-size:15px;font-weight:700}
   <div class="s" id="chNote" style="margin-top:6px"></div>
 </div>
 
-<div class="grid2">
-  <div class="card"><div class="head"><h2>App Store funnel <span class="s" style="font-weight:400">· last 7 days</span></h2></div>
+<div class="grid4">
+  <div class="card scr"><div class="head"><h2>App Store funnel <span class="s" style="font-weight:400">· last 7 days</span></h2></div>
     <div class="funnel">
       <div class="step"><div class="k">Impressions</div><div class="v" id="fImp">–</div></div>
       <div class="step"><div class="k">Page views</div><div class="v" id="fPv">–</div><div class="s" id="fPvS"></div></div>
@@ -120,20 +134,10 @@ h2{font-size:15px;font-weight:700}
     </div>
     <div class="s" id="fNote" style="margin-top:8px"></div>
   </div>
-  <div class="card"><div class="head"><h2>Top products</h2></div><table id="prods"></table></div>
-</div>
-
-<div class="grid2">
-  <div class="card"><div class="head"><h2>Countries</h2></div><table id="countries"></table></div>
-  <div class="card"><div class="head"><h2>Devices &amp; status</h2></div>
-    <div id="devices"></div>
-    <div id="status" style="margin-top:14px"></div>
-  </div>
-</div>
-
-<div class="grid2">
-  <div class="card"><div class="head"><h2>Ratings</h2></div><div id="dist"></div></div>
-  <div class="card"><div class="head"><h2>Reviews</h2><div class="seg" id="rf"><button data-f="all" class="on">All</button><button data-f="low">1–2★</button><button data-f="high">4–5★</button></div></div><div id="reviews"></div></div>
+  <div class="card scr"><div class="head"><h2>Top products</h2></div><div class="in"><table id="prods"></table></div></div>
+  <div class="card scr"><div class="head"><h2>Devices &amp; status</h2></div><div class="in"><div id="devices"></div><div id="status" style="margin-top:10px"></div></div></div>
+  <div class="card scr"><div class="head"><h2>Countries</h2></div><div class="in"><table id="countries"></table></div></div>
+  <div class="card scr rat"><div class="head"><h2>Ratings</h2><div class="seg" id="rf"><button data-f="all" class="on">All</button><button data-f="low">1–2★</button><button data-f="high">4–5★</button></div></div><div id="dist"></div><div class="in" id="reviews"></div></div>
 </div>
 
 <p class="foot">Sales come from Apple's daily report, published the morning after. Net earnings are what you keep after Apple's commission, in US dollars (other currencies converted approximately). Apple pays out about a month after each month closes. Store traffic, sessions and crashes come from App Analytics, run about a day behind, and only count people who share analytics with developers.</p>
@@ -205,7 +209,7 @@ function render(){
   $('kBuy').textContent=fmt(buys);$('kBuyS').textContent=`${pct(buys,dl)} of downloads${refunds?` · ${refunds} refunded`:''}`;
   if(D.subs){$('kClub').textContent=fmt(D.subs.active);$('kClubS').textContent=`as of ${md(D.subs.date)}${D.subs.trials?` · ${D.subs.trials} on trial`:''}${D.subs.billingRetry?` · ${D.subs.billingRetry} payment issue`:''}`}
   const rv=D.reviews||[];
-  if(rv.length){const avg=sum(rv,r=>r.rating)/rv.length;$('kRate').innerHTML=`${avg.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${rv.length} written review${rv.length==1?'':'s'}`}
+  {const sr=D.storeRating;if(sr||rv.length){const av=sr?sr.avg:sum(rv,r=>r.rating)/rv.length,tot=sr?sr.count:rv.length;$('kRate').innerHTML=`${av.toFixed(1)}<span class="stars" style="font-size:16px;margin-left:4px">★</span>`;$('kRateS').textContent=`${tot} rating${tot==1?'':'s'}`}}
   // funnel
   const a7=an.slice(-7);
   if(an.length){const imp=sum(a7,d=>d.impressions),pv=sum(a7,d=>d.pageViews),fd=sum(a7,d=>d.firstDownloads),ses=sum(a7,d=>d.sessions),dev=sum(a7,d=>d.activeDevices),cr=sum(a7,d=>d.crashes),del=sum(a7,d=>d.deletions);
@@ -232,13 +236,13 @@ function render(){
   h+=`<div class="row"><a href="https://apps.apple.com/app/id6815023745" target="_blank" rel="noopener">App Store page ↗</a><a href="https://appstoreconnect.apple.com/apps/6815023745" target="_blank" rel="noopener">App Store Connect ↗</a></div>`;
   $('status').innerHTML=h;
   // ratings
-  const cnt=[0,0,0,0,0];rv.forEach(r=>cnt[r.rating-1]++);const cm=Math.max(1,...cnt),avg=rv.length?sum(rv,r=>r.rating)/rv.length:0;
-  $('dist').innerHTML=rv.length?`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span class="v">${avg.toFixed(1)}</span><span class="stars">${stars(Math.round(avg))}</span><span class="s">${rv.length} reviews</span></div><div class="dist">`+[5,4,3,2,1].map(s=>`<span>${s}★</span><div class="bar" style="margin:0"><i style="width:${100*cnt[s-1]/cm}%;background:#f59e0b"></i></div><span style="text-align:right">${cnt[s-1]}</span>`).join('')+'</div>':'<div class="empty">No ratings with reviews yet.</div>';
+  const sr=D.storeRating,avg=rv.length?sum(rv,r=>r.rating)/rv.length:0,tot=sr?sr.count:rv.length,av=sr?sr.avg:avg;
+  $('dist').innerHTML=tot?`<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px"><span class="v" style="margin:0">${av.toFixed(1)}</span><span class="stars">${stars(Math.round(av))}</span><span class="s">${tot} rating${tot==1?'':'s'}</span></div><div class="s" style="margin-bottom:8px">${rv.length} with a written review · ${Math.max(0,tot-rv.length)} stars only</div>`:'<div class="empty">No ratings yet.</div>';
   renderReviews();chart();
 }
 const stars=n=>'★'.repeat(n)+'<i>'+'★'.repeat(5-n)+'</i>';
 function renderReviews(){const rv=(D.reviews||[]).filter(r=>rfilter==='all'||(rfilter==='low'?r.rating<=2:r.rating>=4));
-  $('reviews').innerHTML=rv.length?rv.slice(0,25).map(r=>`<div class="rev"><span class="stars">${stars(r.rating)}</span> <b>${esc(r.title)}</b><div>${esc(r.body)}</div><div class="s">${esc(r.who)} · ${esc(CN[r.country]||r.country||'')} · ${ago(r.date)}</div></div>`).join(''):'<div class="empty">No reviews yet.</div>'}
+  $('reviews').innerHTML=rv.length?rv.slice(0,60).map(r=>`<div class="rev"><span class="stars">${stars(r.rating)}</span> <b>${esc(r.title)}</b><div>${esc(r.body)}</div><div class="s">${esc(r.who)} · ${esc(CN[r.country]||r.country||'')} · ${ago(r.date)}</div></div>`).join(''):'<div class="empty">No reviews yet.</div>'}
 function seg(id,attr,cb){document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset[attr])})}
 seg('metric','m',v=>{metric=v;D&&chart()});seg('range','r',v=>{range=+v;D&&chart()});seg('rf','f',v=>{rfilter=v;D&&renderReviews()});
 
