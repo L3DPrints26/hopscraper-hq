@@ -84,6 +84,7 @@ header{padding:8px 16px;margin-bottom:10px}h1{font-size:24px}
 .foot{display:none}
 #countries th,#countries td{padding-left:2px;padding-right:2px;font-size:12px}#countries th{font-size:10px}
 #chNote,#fNote{display:none}
+.dist2{display:grid;gap:2px;margin-bottom:6px}.srow{display:grid;grid-template-columns:24px 1fr 96px;gap:6px;align-items:center;font-size:12px;cursor:pointer;padding:1px 4px;border-radius:6px}.srow:hover{background:var(--soft)}.srow.on{background:#e0e7ff}.rat .head{margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -137,7 +138,7 @@ header{padding:8px 16px;margin-bottom:10px}h1{font-size:24px}
   <div class="card scr"><div class="head"><h2>Top products</h2></div><div class="in"><table id="prods"></table></div></div>
   <div class="card scr"><div class="head"><h2>Devices &amp; status</h2></div><div class="in"><div id="devices"></div><div id="status" style="margin-top:10px"></div></div></div>
   <div class="card scr"><div class="head"><h2>Countries</h2></div><div class="in"><table id="countries"></table></div></div>
-  <div class="card scr rat"><div class="head"><h2>Ratings</h2><div class="seg" id="rf"><button data-f="all" class="on">All</button><button data-f="low">1–2★</button><button data-f="high">4–5★</button></div></div><div id="dist"></div><div class="in" id="reviews"></div></div>
+  <div class="card scr rat"><div class="head"><h2>Ratings</h2><div class="seg" id="rf"><button data-f="all" class="on">All</button></div></div><div id="dist"></div><div class="in" id="reviews"></div></div>
 </div>
 
 <p class="foot">Sales come from Apple's daily report, published the morning after. Net earnings are what you keep after Apple's commission, in US dollars (other currencies converted approximately). Apple pays out about a month after each month closes. Store traffic, sessions and crashes come from App Analytics, run about a day behind, and only count people who share analytics with developers.</p>
@@ -237,14 +238,21 @@ function render(){
   $('status').innerHTML=h;
   // ratings
   const sr=(D.storeRating||D.ratings),avg=rv.length?sum(rv,r=>r.rating)/rv.length:0,tot=sr?sr.count:rv.length,av=sr?sr.avg:avg;
-  $('dist').innerHTML=tot?`<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px"><span class="v" style="margin:0">${av.toFixed(1)}</span><span class="stars">${stars(Math.round(av))}</span><span class="s">${tot} rating${tot==1?'':'s'}</span></div><div class="s" style="margin-bottom:8px">${rv.length} with a written review · ${Math.max(0,tot-rv.length)} stars only</div>`:'<div class="empty">No ratings yet.</div>';
+  const cn=sr&&sr.counts,wr=[0,0,0,0,0];rv.forEach(r=>wr[r.rating-1]++);const cmax=Math.max(1,...(cn||wr));
+  const rows=cn?'<div class="dist2">'+[5,4,3,2,1].map(s=>`<div class="srow${rfilter==s?' on':''}" data-s="${s}"><span>${s}★</span><div class="bar" style="margin:0"><i style="width:${100*cn[5-s]/cmax}%;background:#f59e0b"></i></div><span class="s">${cn[5-s]} (${wr[s-1]} written)</span></div>`).join('')+'</div>':`<div class="s" style="margin-bottom:8px">${rv.length} with a written review · ${Math.max(0,tot-rv.length)} stars only</div>`;
+  $('dist').innerHTML=tot?`<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px"><span class="v" style="margin:0">${av.toFixed(1)}</span><span class="stars">${stars(Math.round(av))}</span><span class="s">${tot} rating${tot==1?'':'s'}</span></div>`+rows:'<div class="empty">No ratings yet.</div>';
+  document.querySelectorAll('#dist .srow').forEach(e=>e.onclick=()=>{rfilter=rfilter==e.dataset.s?'all':+e.dataset.s;document.querySelectorAll('#rf button').forEach(x=>x.classList.toggle('on',rfilter==='all'));render2()});
   renderReviews();chart();
 }
 const stars=n=>'★'.repeat(n)+'<i>'+'★'.repeat(5-n)+'</i>';
-function renderReviews(){const rv=(D.reviews||[]).filter(r=>rfilter==='all'||(rfilter==='low'?r.rating<=2:r.rating>=4));
-  $('reviews').innerHTML=rv.length?rv.slice(0,60).map(r=>`<div class="rev"><span class="stars">${stars(r.rating)}</span> <b>${esc(r.title)}</b><div>${esc(r.body)}</div><div class="s">${esc(r.who)} · ${esc(CN[r.country]||r.country||'')} · ${ago(r.date)}</div></div>`).join(''):'<div class="empty">No reviews yet.</div>'}
+function render2(){document.querySelectorAll('#dist .srow').forEach(e=>e.classList.toggle('on',rfilter==e.dataset.s));renderReviews()}
+function renderReviews(){const all=D.reviews||[],rv=all.filter(r=>rfilter==='all'||r.rating===rfilter);
+  let h=rv.length?rv.slice(0,60).map(r=>`<div class="rev"><span class="stars">${stars(r.rating)}</span> <b>${esc(r.title)}</b><div>${esc(r.body)}</div><div class="s">${esc(r.who)} · ${esc(CN[r.country]||r.country||'')} · ${ago(r.date)}</div></div>`).join(''):'<div class="empty">No written reviews'+(rfilter==='all'?' yet':' for this star')+'.</div>';
+  const sr=D.storeRating||D.ratings,cn=sr&&sr.counts;
+  if(cn){const n=rfilter==='all'?sr.count-all.length:cn[5-rfilter]-all.filter(r=>r.rating===rfilter).length;if(n>0)h+=`<div class="s" style="padding:8px 0">+ ${n} rating${n==1?'':'s'} with no written review</div>`}
+  $('reviews').innerHTML=h}
 function seg(id,attr,cb){document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset[attr])})}
-seg('metric','m',v=>{metric=v;D&&chart()});seg('range','r',v=>{range=+v;D&&chart()});seg('rf','f',v=>{rfilter=v;D&&renderReviews()});
+seg('metric','m',v=>{metric=v;D&&chart()});seg('range','r',v=>{range=+v;D&&chart()});seg('rf','f',v=>{rfilter='all';D&&render2()});
 
 // Data source: on the Mac's home server it's plain data.json. On the public site it's data.enc.json,
 // AES-GCM encrypted on the Mac; the password never leaves this browser.
