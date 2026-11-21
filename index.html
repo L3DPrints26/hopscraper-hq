@@ -85,6 +85,14 @@ header{padding:8px 16px;margin-bottom:10px}h1{font-size:24px}
 #countries th,#countries td{padding-left:2px;padding-right:2px;font-size:12px}#countries th{font-size:10px}
 #chNote,#fNote{display:none}
 .dist2{display:grid;gap:2px;margin-bottom:6px}.srow{display:grid;grid-template-columns:24px 1fr 96px;gap:6px;align-items:center;font-size:12px;cursor:pointer;padding:1px 4px;border-radius:6px}.srow:hover{background:var(--soft)}.srow.on{background:#e0e7ff}.rat .head{margin-bottom:2px}
+.grid4{grid-template-columns:minmax(0,1.2fr) minmax(0,1.05fr) minmax(0,1.15fr) minmax(0,2.3fr)}
+.rat .rbody{display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0}
+.rat #reviews{padding-right:6px}
+.rev{padding:12px 0;font-size:13.5px;line-height:1.45}.rev b{font-size:14px}.rev>div:first-of-type{margin:3px 0}
+.rev .s{margin-top:2px}
+.chart{height:calc(160px + (100vh - 768px)*.6)!important}
+.scr{height:calc(332px + (100vh - 768px)*.4)!important}
+@media(max-width:1000px){.rat .rbody{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -134,11 +142,11 @@ header{padding:8px 16px;margin-bottom:10px}h1{font-size:24px}
       <div class="step"><div class="k">Crashes</div><div class="v" id="uCr">–</div><div class="s" id="uCrS"></div></div>
     </div>
     <div class="s" id="fNote" style="margin-top:8px"></div>
+    <div class="k" style="margin-top:10px">Top products</div><div class="in" style="max-height:90px;overflow:auto"><table id="prods"></table></div>
   </div>
-  <div class="card scr"><div class="head"><h2>Top products</h2></div><div class="in"><table id="prods"></table></div></div>
   <div class="card scr"><div class="head"><h2>Devices &amp; status</h2></div><div class="in"><div id="devices"></div><div id="status" style="margin-top:10px"></div></div></div>
   <div class="card scr"><div class="head"><h2>Countries</h2></div><div class="in"><table id="countries"></table></div></div>
-  <div class="card scr rat"><div class="head"><h2>Ratings</h2><div class="seg" id="rf"><button data-f="all" class="on">All</button></div></div><div id="dist"></div><div class="in" id="reviews"></div></div>
+  <div class="card scr rat"><div class="head"><h2>Ratings</h2><div class="seg" id="rf"><button data-f="all" class="on">All</button></div></div><div class="rbody"><div id="dist"></div><div class="in" id="reviews"></div></div></div>
 </div>
 
 <p class="foot">Sales come from Apple's daily report, published the morning after. Net earnings are what you keep after Apple's commission, in US dollars (other currencies converted approximately). Apple pays out about a month after each month closes. Store traffic, sessions and crashes come from App Analytics, run about a day behind, and only count people who share analytics with developers.</p>
